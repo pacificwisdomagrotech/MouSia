@@ -1,0 +1,29 @@
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:#fff7f4;color:#3b0d1e}
+header{background:#7a1237;color:#fff;text-align:center;padding:18px 10px}
+header h1{margin:0;font:italic 700 2rem Georgia,serif}
+header p{margin:4px 0 0;font-size:.85rem;opacity:.85}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding:12px;max-width:1000px;margin:auto}
+.card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px #0002;cursor:pointer}
+.card img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.card div{padding:8px}
+.card b{display:block}
+.chip{display:inline-block;background:#fde3ea;border-radius:10px;padding:1px 8px;font-size:.72rem;margin:2px 2px 0 0}
+.modal{position:fixed;inset:0;background:#000a;overflow:auto;z-index:9;padding:10px}
+.box{background:#fff;max-width:520px;margin:auto;border-radius:14px;padding:14px}
+.box img.big{width:100%;border-radius:10px}
+.th{display:flex;gap:6px;margin:6px 0}
+.th img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:2px solid #eee}
+input,select,textarea,button{width:100%;padding:10px;margin:5px 0;border:1px solid #d9b3bf;border-radius:8px;font:inherit}
+button{background:#7a1237;color:#fff;border:0;cursor:pointer}
+button.alt{background:#25d366}
+button.gr{background:#888}
+.row{display:flex;gap:6px}
+.row>*{flex:1}
+.pre{white-space:pre-line}
+footer{text-align:center;padding:16px;font-size:.85rem}
+.o{background:#fff;border-radius:10px;padding:10px;margin:8px 0;box-shadow:0 1px 5px #0002;font-size:.88rem}
+nav{display:flex;gap:6px;padding:8px 0}
+nav button{margin:0}
+.qr{width:200px;display:block;margin:8px auto}
+@media print{body>*:not(#m){display:none}.modal{position:static;background:none}button{display:none}}

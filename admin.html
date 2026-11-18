@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MouSiya Admin</title>
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<header><h1>MouSiya Admin</h1></header>
+<div id="app" style="max-width:640px;margin:auto;padding:10px"></div>
+<div id="m" class="modal" hidden><div class="box" id="mb"></div></div>
+<script type="module">
+import {db,auth} from "./firebase-config.js";
+import {signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {collection,doc,addDoc,deleteDoc,getDoc,setDoc,updateDoc,onSnapshot,runTransaction} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shrink=(f,max=800,q=.6)=>new Promise(r=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=i.width*k;c.height=i.height*k;c.getContext("2d").drawImage(i,0,0,c.width,c.height);r(c.toDataURL("image/jpeg",q))};i.src=URL.createObjectURL(f)});
+let P=[],O=[],S={},tab="p",subbed=false;
+
+onAuthStateChanged(auth,u=>u?dash():login());
+
+function login(){
+  $("app").innerHTML=`<input id="e" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Password"><button id="l">Login</button>`;
+  $("l").onclick=()=>signInWithEmailAndPassword(auth,$("e").value,$("pw").value).catch(()=>alert("Login galat hai"));
+}
+
+function dash(){
+  $("app").innerHTML=`<nav><button data-t="p">Sarees</button><button data-t="o">Orders</button><button data-t="s">Settings</button><button class="gr" id="lo">Logout</button></nav><div id="v"></div>`;
+  $("app").querySelector("nav").onclick=e=>{if(e.target.dataset.t){tab=e.target.dataset.t;view()}};
+  $("lo").onclick=()=>signOut(auth);
+  if(!subbed){subbed=true;
+    onSnapshot(collection(db,"products"),q=>{P=q.docs.map(d=>({id:d.id,...d.data()}));view()});
+    onSnapshot(collection(db,"orders"),q=>{O=q.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.at-a.at);view()});
+    getDoc(doc(db,"settings","shop")).then(s=>{if(s.exists())S=s.data();view()});
+  }
+  view();
+}
+
+function view(){
+  const v=$("v");if(!v)return;
+  if(tab==="p")return prodView(v);
+  if(tab==="o")return ordView(v);
+  setView(v);
+}
+
+function prodView(v){
+  const keep=$("t")?null:1;
+  if(!$("t")||!keep){
+    v.innerHTML=`<div class="o"><h3>Naya Saree</h3><input id="t" placeholder="Saree ka naam"><input id="p" type="number" placeholder="Price ₹">
+    <textarea id="s" rows="4" placeholder="Specialities (3-5 lines)"></textarea>
+    <input id="f" type="file" accept="image/*" multiple><small>1 se 3 photos</small>
+    <div id="cl"></div><button class="gr" id="ac">+ Colour add karein</button><button id="sv">Save Saree</button></div><div id="pl"></div>`;
+    addCol();$("ac").onclick=addCol;$("sv").onclick=saveProd;
+  }
+  $("pl").innerHTML=P.map(p=>`<div class="o"><b>${esc(p.title)}</b> ₹${esc(p.price)}<br>${p.colors.map((c,i)=>`${esc(c.name)}: <b>${c.qty}</b> <a href="#" data-r="${p.id}:${i}">restock</a>`).join(" · ")}<br><a href="#" data-d="${p.id}">Delete</a></div>`).join("");
+  $("pl").onclick=async e=>{
+    const a=e.target;if(a.tagName!=="A")return;e.preventDefault();
+    if(a.dataset.d&&confirm("Delete karein?"))deleteDoc(doc(db,"products",a.dataset.d));
+    if(a.dataset.r){const[id,i]=a.dataset.r.split(":"),p=P.find(x=>x.id===id),n=prompt("Naya quantity "+p.colors[i].name);
+      if(n!==null&&n!==""){p.colors[i].qty=+n;updateDoc(doc(db,"products",id),{colors:p.colors})}}
+  };
+}
+function addCol(){$("cl").insertAdjacentHTML("beforeend",`<div class="row"><input class="cn" placeholder="Colour"><input class="cq" type="number" min="0" placeholder="Qty"></div>`)}
+async function saveProd(){
+  const files=[...$("f").files].slice(0,3),title=$("t").value.trim(),price=$("p").value;
+  const colors=[...document.querySelectorAll("#cl .row")].map(r=>({name:r.children[0].value.trim(),qty:+r.children[1].value||0})).filter(c=>c.name);
+  if(!files.length||!title||!price||!colors.length)return alert("Naam, price, 1+ photo aur 1+ colour zaroori hai");
+  $("sv").disabled=true;
+  const images=await Promise.all(files.map(f=>shrink(f)));
+  await addDoc(collection(db,"products"),{title,price:+price,specialities:$("s").value,images,colors,at:Date.now()});
+  $("t").remove();view();
+}
+
+function ordView(v){
+  v.innerHTML=O.map(o=>`<div class="o"><b>${esc(o.oid)}</b> · ${esc(o.status)}${o.payMode?" · "+esc(o.payMode):""}<br>${esc(o.title)} / ${esc(o.color)} × ${o.qty} = ₹${o.total}<br>${esc(o.name)} · ${esc(o.phone)}<br>${esc(o.addr)}<br>Customer ki choice: ${esc(o.pay)}
+  ${o.status==="pending"?`<select id="pm${o.id}"><option>Online</option><option>Cash</option><option>COD</option></select><button data-c="${o.id}">Confirm + Receipt</button><button class="gr" data-x="${o.id}">Cancel (stock wapas)</button>`:o.status==="confirmed"?`<button data-v="${o.id}">Receipt dekhein</button>`:""}</div>`).join("")||"<p>Abhi koi order nahi</p>";
+  v.onclick=async e=>{
+    const d=e.target.dataset,o=O.find(x=>x.id===(d.c||d.x||d.v));if(!o)return;
+    if(d.c){o.payMode=$("pm"+o.id).value;await updateDoc(doc(db,"orders",o.id),{status:"confirmed",payMode:o.payMode});o.status="confirmed";receipt(o)}
+    if(d.v)receipt(o);
+    if(d.x&&confirm("Order cancel karein?")){
+      await runTransaction(db,async t=>{
+        const pr=doc(db,"products",o.pid),s=await t.get(pr);
+        if(s.exists()){const cols=s.data().colors,c=cols.find(x=>x.name===o.color);if(c){c.qty+=o.qty;t.update(pr,{colors:cols})}}
+        t.update(doc(db,"orders",o.id),{status:"cancelled"});
+      });
+    }
+  };
+}
+
+function receipt(o){
+  const dt=new Date(o.at).toLocaleDateString("en-IN"),
+  txt=`*MouSiya – Receipt*\nNo: ${o.oid}\nDate: ${dt}\n${o.title} (${o.color}) × ${o.qty}\nTotal: ₹${o.total}\nPayment: ${o.payMode}\nThank you for supporting my small business ❤`;
+  $("m").hidden=false;
+  $("mb").innerHTML=`<h2 style="text-align:center;margin:0">MouSiya</h2><p style="text-align:center;margin:2px">Receipt · ${esc(o.oid)} · ${dt}</p><hr>
+  <p>${esc(o.name)}<br>${esc(o.phone)}<br>${esc(o.addr)}</p>
+  <p>${esc(o.title)} (${esc(o.color)})<br>${o.qty} × ₹${o.price} = <b>₹${o.total}</b></p>
+  <p>Payment mode: <b>${esc(o.payMode)}</b></p><p>Thank you for supporting my small business ❤</p>
+  <button onclick="print()">Print / Save PDF</button>
+  <a href="https://wa.me/91${esc(o.phone.slice(-10))}?text=${encodeURIComponent(txt)}"><button class="alt">Customer ko WhatsApp karein</button></a>
+  <button class="gr" id="x">Close</button>`;
+  $("x").onclick=()=>$("m").hidden=true;
+}
+
+function setView(v){
+  v.innerHTML=`<div class="o"><input id="u" placeholder="UPI ID (e.g. name@upi)" value="${esc(S.upi||"")}">
+  <input id="w" placeholder="WhatsApp (91 ke saath, e.g. 917304142146)" value="${esc(S.wa||"917304142146")}">
+  <input id="lc" placeholder="Shop location / address (baad mein bhi add kar sakte hain)" value="${esc(S.location||"")}">
+  <p>UPI QR image:</p>${S.qr?`<img class="qr" src="${S.qr}">`:""}<input id="qf" type="file" accept="image/*">
+  <button id="ss">Save Settings</button></div>`;
+  $("ss").onclick=async()=>{
+    const d={upi:$("u").value.trim(),wa:$("w").value.trim(),location:$("lc").value.trim()};
+    if($("qf").files[0])d.qr=await shrink($("qf").files[0],500,.85);
+    await setDoc(doc(db,"settings","shop"),d,{merge:true});S={...S,...d};alert("Saved ✅");view();
+  };
+}
+</script></body></html>
