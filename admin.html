@@ -4,7 +4,7 @@
 <title>MouSiya Admin</title>
 <link rel="stylesheet" href="style.css"></head>
 <body>
-<header><h1>MouSiya Admin</h1></header>
+<header class="hero small"><h1>MouSiya</h1><p class="tag">Owner Dashboard</p></header>
 <div id="app" style="max-width:640px;margin:auto;padding:10px"></div>
 <div id="m" class="modal" hidden><div class="box" id="mb"></div></div>
 <script type="module">
@@ -13,18 +13,39 @@ import {signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www
 import {collection,doc,addDoc,deleteDoc,getDoc,setDoc,updateDoc,onSnapshot,runTransaction} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const mp=o=>(o.map||"").startsWith("https://www.google.com/maps?q=")?` <a href="${esc(o.map)}" target="_blank">📍 Map kholein</a>`:"";
+const save=(b,o)=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=`Receipt-${o.oid}.jpg`;a.click()};
+const jpeg=o=>new Promise(r=>{
+  const c=document.createElement("canvas");c.width=800;c.height=1000;const x=c.getContext("2d");
+  x.fillStyle="#fff7f4";x.fillRect(0,0,800,1000);
+  x.fillStyle="#7a1237";x.fillRect(0,0,800,150);x.fillRect(0,900,800,100);
+  x.fillStyle="#fff";x.textAlign="center";x.font="italic 700 64px Georgia,serif";x.fillText("MouSiya",400,80);
+  x.font="26px sans-serif";x.fillText("Ethnic Wear for Every Woman",400,122);
+  x.font="italic 28px Georgia,serif";x.fillText("Thank you for supporting my small business ♥",400,960);
+  x.fillStyle="#3b0d1e";x.textAlign="left";
+  let y=215;
+  const ln=(t,b,s=32)=>{x.font=(b?"bold ":"")+s+"px sans-serif";x.fillText(t,50,y);y+=s+22};
+  const wr=(t,b)=>{x.font=(b?"bold ":"")+"30px sans-serif";let l="";for(const w of String(t).split(" ")){if(x.measureText(l+w).width>700&&l){x.fillText(l,50,y);y+=46;l=w+" "}else l+=w+" "}x.fillText(l,50,y);y+=60};
+  ln("RECEIPT  "+o.oid,true,36);ln("Date: "+new Date(o.at).toLocaleDateString("en-IN"));
+  y+=10;ln("Customer: "+o.name);ln("Phone: "+o.phone);
+  y+=10;wr(o.title+" ("+o.color+")",true);ln(o.qty+" x Rs "+o.price);
+  x.fillStyle="#7a1237";ln("TOTAL: Rs "+o.total,true,48);
+  x.fillStyle="#3b0d1e";ln("Payment mode: "+o.payMode,true);
+  y+=10;wr("Address: "+o.addr);
+  c.toBlob(r,"image/jpeg",.92);
+});
 const shrink=(f,max=800,q=.6)=>new Promise(r=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=i.width*k;c.height=i.height*k;c.getContext("2d").drawImage(i,0,0,c.width,c.height);r(c.toDataURL("image/jpeg",q))};i.src=URL.createObjectURL(f)});
 let P=[],O=[],S={},tab="p",subbed=false;
 
 onAuthStateChanged(auth,u=>u?dash():login());
 
 function login(){
-  $("app").innerHTML=`<input id="e" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Password"><button id="l">Login</button>`;
+  $("app").innerHTML=`<div class="o"><h3>Owner Login</h3><input id="e" type="email" placeholder="Email"><input id="pw" type="password" placeholder="Password"><button id="l">Login</button></div>`;
   $("l").onclick=()=>signInWithEmailAndPassword(auth,$("e").value,$("pw").value).catch(()=>alert("Login galat hai"));
 }
 
 function dash(){
-  $("app").innerHTML=`<nav><button data-t="p">Sarees</button><button data-t="o">Orders</button><button data-t="s">Settings</button><button class="gr" id="lo">Logout</button></nav><div id="v"></div>`;
+  $("app").innerHTML=`<nav><button data-t="p">🧵 Sarees</button><button data-t="o">📦 Orders</button><button data-t="s">⚙️ Settings</button><button class="gr" id="lo">Logout</button></nav><div id="v"></div>`;
   $("app").querySelector("nav").onclick=e=>{if(e.target.dataset.t){tab=e.target.dataset.t;view()}};
   $("lo").onclick=()=>signOut(auth);
   if(!subbed){subbed=true;
@@ -37,6 +58,9 @@ function dash(){
 
 function view(){
   const v=$("v");if(!v)return;
+  document.querySelectorAll("nav button[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
+  const pn=O.filter(o=>o.status==="pending").length,ob=document.querySelector('nav [data-t="o"]');
+  if(ob)ob.textContent="📦 Orders"+(pn?` (${pn})`:"");
   if(tab==="p")return prodView(v);
   if(tab==="o")return ordView(v);
   setView(v);
@@ -71,7 +95,7 @@ async function saveProd(){
 }
 
 function ordView(v){
-  v.innerHTML=O.map(o=>`<div class="o"><b>${esc(o.oid)}</b> · ${esc(o.status)}${o.payMode?" · "+esc(o.payMode):""}<br>${esc(o.title)} / ${esc(o.color)} × ${o.qty} = ₹${o.total}<br>${esc(o.name)} · ${esc(o.phone)}<br>${esc(o.addr)}<br>Customer ki choice: ${esc(o.pay)}
+  v.innerHTML=O.map(o=>`<div class="o"><b>${esc(o.oid)}</b> <span class="bd ${esc(o.status)}">${esc(o.status)}</span>${o.payMode?" · "+esc(o.payMode):""}<br>${esc(o.title)} / ${esc(o.color)} × ${o.qty} = ₹${o.total}<br>${esc(o.name)} · ${esc(o.phone)}<br>${esc(o.addr)}${mp(o)}<br>Customer ki choice: ${esc(o.pay)}
   ${o.status==="pending"?`<select id="pm${o.id}"><option>Online</option><option>Cash</option><option>COD</option></select><button data-c="${o.id}">Confirm + Receipt</button><button class="gr" data-x="${o.id}">Cancel (stock wapas)</button>`:o.status==="confirmed"?`<button data-v="${o.id}">Receipt dekhein</button>`:""}</div>`).join("")||"<p>Abhi koi order nahi</p>";
   v.onclick=async e=>{
     const d=e.target.dataset,o=O.find(x=>x.id===(d.c||d.x||d.v));if(!o)return;
@@ -96,19 +120,26 @@ function receipt(o){
   <p>${esc(o.title)} (${esc(o.color)})<br>${o.qty} × ₹${o.price} = <b>₹${o.total}</b></p>
   <p>Payment mode: <b>${esc(o.payMode)}</b></p><p>Thank you for supporting my small business ❤</p>
   <button onclick="print()">Print / Save PDF</button>
-  <a href="https://wa.me/91${esc(o.phone.slice(-10))}?text=${encodeURIComponent(txt)}"><button class="alt">Customer ko WhatsApp karein</button></a>
+  <button class="alt" id="sj">Receipt JPEG bhejein (WhatsApp)</button><button class="gr" id="dj">JPEG download</button>
   <button class="gr" id="x">Close</button>`;
   $("x").onclick=()=>$("m").hidden=true;
+  $("dj").onclick=async()=>save(await jpeg(o),o);
+  $("sj").onclick=async()=>{
+    const b=await jpeg(o),f=new File([b],`Receipt-${o.oid}.jpg`,{type:"image/jpeg"});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],text:`MouSiya receipt ${o.oid}`})}catch(e){}return}
+    save(b,o);window.open(`https://wa.me/91${o.phone.slice(-10)}`);alert("JPEG download ho gayi. WhatsApp chat me attach karke bhejein.");
+  };
 }
 
 function setView(v){
   v.innerHTML=`<div class="o"><input id="u" placeholder="UPI ID (e.g. name@upi)" value="${esc(S.upi||"")}">
   <input id="w" placeholder="WhatsApp (91 ke saath, e.g. 917304142146)" value="${esc(S.wa||"917304142146")}">
   <input id="lc" placeholder="Shop location / address (baad mein bhi add kar sakte hain)" value="${esc(S.location||"")}">
+  <input id="nt" placeholder="ntfy topic (lamba random naam, e.g. mousiya-x7k29qp4)" value="${esc(S.ntfy||"")}">
   <p>UPI QR image:</p>${S.qr?`<img class="qr" src="${S.qr}">`:""}<input id="qf" type="file" accept="image/*">
   <button id="ss">Save Settings</button></div>`;
   $("ss").onclick=async()=>{
-    const d={upi:$("u").value.trim(),wa:$("w").value.trim(),location:$("lc").value.trim()};
+    const d={upi:$("u").value.trim(),wa:$("w").value.trim(),location:$("lc").value.trim(),ntfy:$("nt").value.trim()};
     if($("qf").files[0])d.qr=await shrink($("qf").files[0],500,.85);
     await setDoc(doc(db,"settings","shop"),d,{merge:true});S={...S,...d};alert("Saved ✅");view();
   };
