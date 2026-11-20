@@ -4,33 +4,52 @@
 <title>MouSiya – Bengali Sarees</title>
 <link rel="stylesheet" href="style.css"></head>
 <body>
-<header class="hero"><div class="orn">✦ ✦ ✦</div><h1>MouSiya</h1><p class="tag">Authentic Bengali Sarees</p><p class="sub">Elegance in Every Thread</p></header>
-<div class="strip"><span>💬 Order on WhatsApp</span><span>💳 UPI &amp; Cash on Delivery</span><span>🧵 Authentic Bengali weaves</span></div>
-<h2 class="st">Our Collection</h2>
+<header class="top"><div class="bar"><div class="logo">MouSiya</div>
+<select id="lg"><option value="en">English</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option></select></div>
+<input id="sq" class="search"></header>
+<div class="strip"><span data-i="s1"></span><span data-i="s2"></span><span data-i="s3"></span></div>
+<h2 class="st" data-i="coll"></h2>
 <main id="grid" class="grid"></main>
-<div id="m" class="modal" hidden><div class="box" id="mb"></div></div>
+<section class="about"><h2 data-i="abh"></h2><p data-i="abp"></p></section>
 <footer id="ft"></footer>
+<a id="wf" class="wf" target="_blank" rel="noopener"></a>
+<div id="m" class="modal" hidden><div class="box" id="mb"></div></div>
 <script type="module">
 import {db} from "./firebase-config.js";
 import {collection,doc,getDoc,onSnapshot,runTransaction} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let S={wa:"917304142146"},P=[],L=null;
+const T={
+en:{tag:"",s1:"💬 Order on WhatsApp",s2:"💳 UPI & Cash on Delivery",s3:"🧵 Authentic Bengali weaves",search:"Search sarees…",coll:"Our Collection",abh:"About MouSiya",abp:"MouSiya brings you authentic Bengali sarees, chosen with care for every woman. Order easily on WhatsApp, pay by UPI or cash on delivery.",sold:"Sold out",left:"Only {n} left",empty:"New sarees coming soon…",name:"Your name",phone:"Phone number",addr:"Delivery address",qty:"Quantity",avail:"available",hl:"Highlights",loc:"📍 Share my location (map)",locok:"✅ Location received",locerr:"Allow location or type your address",cod:"Cash on Delivery",order:"Create Order",close:"Close",fill:"Please fill name, phone, address and quantity correctly",nostock:"Not enough stock available",done1:"✅ Order {id} placed!",total:"Total",payn:"Pay now:",payapp:"Pay with UPI app",sendn:"Now send the order on WhatsApp; the owner will confirm.",sendwa:"Send order on WhatsApp",done:"Done",chat:"Chat with us"},
+hi:{s1:"💬 WhatsApp पर ऑर्डर करें",s2:"💳 UPI और कैश ऑन डिलीवरी",s3:"🧵 असली बंगाली बुनाई",search:"साड़ी खोजें…",coll:"हमारा कलेक्शन",abh:"MouSiya के बारे में",abp:"MouSiya आपके लिए चुनी हुई असली बंगाली साड़ियाँ लाता है। WhatsApp पर आसानी से ऑर्डर करें, UPI या कैश ऑन डिलीवरी से भुगतान करें।",sold:"स्टॉक खत्म",left:"सिर्फ़ {n} बचे",empty:"नई साड़ियाँ जल्द आ रही हैं…",name:"आपका नाम",phone:"फ़ोन नंबर",addr:"डिलीवरी का पता",qty:"मात्रा",avail:"उपलब्ध",hl:"खासियतें",loc:"📍 मेरी लोकेशन भेजें (मैप)",locok:"✅ लोकेशन मिल गई",locerr:"लोकेशन की अनुमति दें या पता लिखें",cod:"कैश ऑन डिलीवरी",order:"ऑर्डर करें",close:"बंद करें",fill:"नाम, फ़ोन, पता और मात्रा सही भरें",nostock:"इतना स्टॉक उपलब्ध नहीं है",done1:"✅ ऑर्डर {id} हो गया!",total:"कुल",payn:"अभी भुगतान करें:",payapp:"UPI ऐप से भुगतान करें",sendn:"अब ऑर्डर WhatsApp पर भेजें, मालिक कन्फ़र्म करेंगी।",sendwa:"WhatsApp पर ऑर्डर भेजें",done:"ठीक है",chat:"हमसे बात करें"},
+bn:{s1:"💬 WhatsApp-এ অর্ডার করুন",s2:"💳 UPI ও ক্যাশ অন ডেলিভারি",s3:"🧵 আসল বাংলার বুনন",search:"শাড়ি খুঁজুন…",coll:"আমাদের সংগ্রহ",abh:"MouSiya সম্পর্কে",abp:"MouSiya আপনার জন্য যত্ন করে বাছাই করা খাঁটি বাংলার শাড়ি নিয়ে এসেছে। WhatsApp-এ সহজে অর্ডার করুন, UPI বা ক্যাশ অন ডেলিভারিতে মূল্য দিন।",sold:"স্টক শেষ",left:"মাত্র {n}টি বাকি",empty:"নতুন শাড়ি শীঘ্রই আসছে…",name:"আপনার নাম",phone:"ফোন নম্বর",addr:"ডেলিভারির ঠিকানা",qty:"পরিমাণ",avail:"আছে",hl:"বিশেষত্ব",loc:"📍 আমার লোকেশন পাঠান (ম্যাপ)",locok:"✅ লোকেশন পাওয়া গেছে",locerr:"লোকেশনের অনুমতি দিন বা ঠিকানা লিখুন",cod:"ক্যাশ অন ডেলিভারি",order:"অর্ডার করুন",close:"বন্ধ করুন",fill:"নাম, ফোন, ঠিকানা ও পরিমাণ সঠিকভাবে লিখুন",nostock:"এত স্টক নেই",done1:"✅ অর্ডার {id} হয়েছে!",total:"মোট",payn:"এখন পেমেন্ট করুন:",payapp:"UPI অ্যাপে পেমেন্ট করুন",sendn:"এখন অর্ডারটি WhatsApp-এ পাঠান, মালিক নিশ্চিত করবেন।",sendwa:"WhatsApp-এ অর্ডার পাঠান",done:"ঠিক আছে",chat:"আমাদের সাথে কথা বলুন"}};
+let lang="en",S={wa:"917304142146"},P=[],L=null;
+try{lang=localStorage.getItem("lg")||"en"}catch(e){}
+const t=(k,r={})=>(T[lang][k]||T.en[k]||k).replace(/\{(\w+)\}/g,(_,a)=>r[a]);
 
-getDoc(doc(db,"settings","shop")).then(s=>{
-  if(s.exists())S={...S,...s.data()};
-  $("ft").innerHTML=S.location?`📍 ${esc(S.location)}<br>`:"";
-  $("ft").innerHTML+=`WhatsApp: <a href="https://wa.me/${esc(S.wa)}">${esc(S.wa)}</a>`;
-});
+function apply(){
+  document.documentElement.lang=lang;$("lg").value=lang;$("sq").placeholder=t("search");
+  document.querySelectorAll("[data-i]").forEach(e=>e.textContent=t(e.dataset.i));
+  render();foot();
+}
+function foot(){
+  $("ft").innerHTML=(S.location?`📍 ${esc(S.location)}<br>`:"")+`WhatsApp: <a href="https://wa.me/${esc(S.wa)}">${esc(S.wa)}</a><br>© MouSiya`;
+  $("wf").href=`https://wa.me/${S.wa}?text=${encodeURIComponent("Hi MouSiya!")}`;$("wf").textContent="💬 "+t("chat");
+}
+$("lg").onchange=e=>{lang=e.target.value;try{localStorage.setItem("lg",lang)}catch(x){}$("m").hidden=true;apply()};
+$("sq").oninput=render;
 
-onSnapshot(collection(db,"products"),q=>{
-  P=q.docs.map(d=>({id:d.id,...d.data()}));
-  $("grid").innerHTML=P.map(p=>{
-    const t=p.colors.reduce((a,c)=>a+c.qty,0);
-    return `<div class="card" data-id="${p.id}"><img src="${p.images[0]}"><div><b>${esc(p.title)}</b><span class="price">₹${esc(p.price)}</span><br>${
-      t?p.colors.filter(c=>c.qty>0).map(c=>`<span class="chip">${esc(c.name)}</span>`).join(""):"<span class='chip'>Sold out</span>"}</div></div>`;
-  }).join("")||"<p style='padding:20px'>Jaldi aa rahe hain naye sarees…</p>";
-});
+getDoc(doc(db,"settings","shop")).then(s=>{if(s.exists())S={...S,...s.data()};foot()});
+onSnapshot(collection(db,"products"),q=>{P=q.docs.map(d=>({id:d.id,...d.data()}));render()});
+
+function render(){
+  const k=$("sq").value.trim().toLowerCase(),list=P.filter(p=>p.title.toLowerCase().includes(k));
+  $("grid").innerHTML=list.map(p=>{
+    const n=p.colors.reduce((a,c)=>a+c.qty,0);
+    return `<div class="card" data-id="${p.id}"><img src="${p.images[0]}"><div><b>${esc(p.title)}</b><span class="price">₹${esc(p.price)}</span>${
+      n?(n<=3?`<span class="left">${t("left",{n})}</span>`:"")+p.colors.filter(c=>c.qty>0).map(c=>`<span class="chip">${esc(c.name)}</span>`).join(""):`<span class="left">${t("sold")}</span>`}</div></div>`;
+  }).join("")||`<p style="padding:20px">${t("empty")}</p>`;
+}
 $("grid").onclick=e=>{const c=e.target.closest(".card");if(c)open(c.dataset.id)};
 $("m").onclick=e=>{if(e.target.id==="m")$("m").hidden=true};
 
@@ -39,51 +58,50 @@ function open(id){
   $("m").hidden=false;
   $("mb").innerHTML=`<img class="big" id="bg" src="${p.images[0]}">
   <div class="th">${p.images.map(i=>`<img src="${i}">`).join("")}</div>
-  <h3>${esc(p.title)} — ₹${esc(p.price)}</h3><p class="pre">${esc(p.specialities)}</p>
-  ${av.length?`<select id="co">${av.map(c=>`<option value="${esc(c.name)}">${esc(c.name)} (${c.qty} available)</option>`).join("")}</select>
-  <input id="q" type="number" min="1" value="1" placeholder="Quantity">
-  <input id="n" placeholder="Aapka naam"><input id="ph" type="tel" placeholder="Phone number">
-  <textarea id="ad" rows="2" placeholder="Delivery address"></textarea>
-  <button class="gr" id="loc" type="button">📍 Meri location bhejein (map)</button><div id="lm"></div>
-  <select id="py"><option value="UPI">UPI / GPay / PhonePe</option><option value="COD">Cash on Delivery</option></select>
-  <button id="go">Create Order</button>`:"<b>Sold out</b>"}
-  <button class="gr" id="x">Close</button><div id="res"></div>`;
+  <h3>${esc(p.title)} — ₹${esc(p.price)}</h3><b>${t("hl")}</b><p class="pre">${esc(p.specialities)}</p>
+  ${av.length?`<select id="co">${av.map(c=>`<option value="${esc(c.name)}">${esc(c.name)} (${c.qty} ${t("avail")})</option>`).join("")}</select>
+  <input id="q" type="number" min="1" value="1" placeholder="${t("qty")}">
+  <input id="n" placeholder="${t("name")}"><input id="ph" type="tel" placeholder="${t("phone")}">
+  <textarea id="ad" rows="2" placeholder="${t("addr")}"></textarea>
+  <button class="gr" id="loc" type="button">${t("loc")}</button><div id="lm"></div>
+  <select id="py"><option value="UPI">UPI / GPay / PhonePe</option><option value="COD">${t("cod")}</option></select>
+  <button id="go">${t("order")}</button>`:`<b>${t("sold")}</b>`}
+  <button class="gr" id="x">${t("close")}</button>`;
   $("mb").querySelector(".th").onclick=e=>{if(e.target.src)$("bg").src=e.target.src};
   $("x").onclick=()=>$("m").hidden=true;
   if($("go"))$("go").onclick=()=>order(p);
   if($("loc"))$("loc").onclick=()=>{
-    if(!navigator.geolocation)return alert("Is phone me location support nahi hai");
-    $("loc").textContent="Location dhundh rahe hain…";
+    if(!navigator.geolocation)return alert(t("locerr"));
     navigator.geolocation.getCurrentPosition(g=>{
-      L={lat:+g.coords.latitude.toFixed(6),lng:+g.coords.longitude.toFixed(6)};
-      const d=.004;
+      L={lat:+g.coords.latitude.toFixed(6),lng:+g.coords.longitude.toFixed(6)};const d=.004;
       $("lm").innerHTML=`<iframe style="width:100%;height:180px;border:0;border-radius:10px" src="https://www.openstreetmap.org/export/embed.html?bbox=${L.lng-d},${L.lat-d},${L.lng+d},${L.lat+d}&marker=${L.lat},${L.lng}"></iframe>`;
-      $("loc").textContent="✅ Location mil gayi (dobara dabake badal sakte hain)";
-    },()=>{$("loc").textContent="📍 Meri location bhejein (map)";alert("Location allow karein ya address likh dein")},{enableHighAccuracy:true,timeout:15000});
+      $("loc").textContent=t("locok");
+    },()=>alert(t("locerr")),{enableHighAccuracy:true,timeout:15000});
   };
 }
 
 async function order(p){
   const color=$("co").value,qty=+$("q").value,name=$("n").value.trim(),phone=$("ph").value.trim(),addr=$("ad").value.trim(),pay=$("py").value;
-  if(!(qty>0)||!name||phone.length<10||!addr)return alert("Naam, phone, address aur quantity sahi bharein");
+  if(!(qty>0)||!name||phone.length<10||!addr)return alert(t("fill"));
   const oid="MS"+Date.now().toString().slice(-6),total=qty*(+p.price),map=L?`https://www.google.com/maps?q=${L.lat},${L.lng}`:"";
   $("go").disabled=true;
   try{
-    await runTransaction(db,async t=>{
-      const ref=doc(db,"products",p.id),s=await t.get(ref),cols=s.data().colors,c=cols.find(x=>x.name===color);
-      if(!c||c.qty<qty)throw new Error("Itna stock available nahi hai");
+    await runTransaction(db,async tr=>{
+      const ref=doc(db,"products",p.id),s=await tr.get(ref),cols=s.data().colors,c=cols.find(x=>x.name===color);
+      if(!c||c.qty<qty)throw new Error(t("nostock"));
       c.qty-=qty;
-      t.update(ref,{colors:cols});
-      t.set(doc(collection(db,"orders")),{oid,pid:p.id,title:p.title,color,qty,price:+p.price,total,name,phone,addr,map,pay,status:"pending",at:Date.now()});
+      tr.update(ref,{colors:cols});
+      tr.set(doc(collection(db,"orders")),{oid,pid:p.id,title:p.title,color,qty,price:+p.price,total,name,phone,addr,map,pay,status:"pending",at:Date.now()});
     });
   }catch(e){$("go").disabled=false;return alert(e.message)}
   if(S.ntfy)fetch("https://ntfy.sh/"+encodeURIComponent(S.ntfy),{method:"POST",headers:{Title:"New order "+oid,Tags:"shopping_cart",Click:location.origin+location.pathname.replace(/[^/]*$/,"")+"admin.html"},body:`${p.title} (${color}) x${qty} = Rs ${total}\nNaam: ${name}\nPay: ${pay}`}).catch(()=>{});
-  const msg=`Namaste! Naya order ${oid}\nSaree: ${p.title}\nColour: ${color}\nQty: ${qty}\nTotal: ₹${total}\nPayment: ${pay}\nNaam: ${name}\nPhone: ${phone}\nAddress: ${addr}${map?"\nMap: "+map:""}`;
+  const msg=`Namaste! New order ${oid}\nSaree: ${p.title}\nColour: ${color}\nQty: ${qty}\nTotal: ₹${total}\nPayment: ${pay}\nName: ${name}\nPhone: ${phone}\nAddress: ${addr}${map?"\nMap: "+map:""}`;
   const upi=S.upi?`upi://pay?pa=${encodeURIComponent(S.upi)}&pn=MouSiya&am=${total}&cu=INR&tn=${oid}`:"";
-  $("mb").innerHTML=`<h3>✅ Order ${oid} ban gaya!</h3><p>Total: ₹${total}</p>
-  ${pay==="UPI"?`<p>Payment karein:</p>${S.qr?`<img class="qr" src="${S.qr}">`:""}<p>UPI ID: <b>${esc(S.upi||"")}</b></p>${upi?`<a href="${upi}"><button>Pay with UPI app</button></a>`:""}`:"<p>Cash on Delivery</p>"}
-  <p>Ab neeche button se order WhatsApp par bhejein, owner confirm karengi.</p>
-  <a href="https://wa.me/${esc(S.wa)}?text=${encodeURIComponent(msg)}"><button class="alt">Send order on WhatsApp</button></a>
-  <button class="gr" onclick="location.reload()">Done</button>`;
+  $("mb").innerHTML=`<h3>${t("done1",{id:oid})}</h3><p>${t("total")}: ₹${total}</p>
+  ${pay==="UPI"?`<p>${t("payn")}</p>${S.qr?`<img class="qr" src="${S.qr}">`:""}<p>UPI ID: <b>${esc(S.upi||"")}</b></p>${upi?`<a href="${upi}"><button>${t("payapp")}</button></a>`:""}`:`<p>${t("cod")}</p>`}
+  <p>${t("sendn")}</p>
+  <a href="https://wa.me/${esc(S.wa)}?text=${encodeURIComponent(msg)}"><button class="alt">${t("sendwa")}</button></a>
+  <button class="gr" onclick="location.reload()">${t("done")}</button>`;
 }
+apply();
 </script></body></html>
